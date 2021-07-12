@@ -1,0 +1,96 @@
+\documentclass[linenumbers]{aastex631}
+
+\shorttitle{The Tractor}
+\shortauthors{Lang and Hogg}
+
+\newcommand{\thetractor}{\emph{The Tractor}}
+
+\begin{document}
+
+\title{\emph{The Tractor}: forward modeling of astronomical images}
+
+\author[0000-0002-1172-0754]{Dustin A. Lang}
+\affiliation{Perimeter Institute for Theoretical Physics, 31 Caroline Street N, Waterloo, ON N25 2YL, Canada}
+
+\author[0000-0003-2866-9403]{David W. Hogg}
+\affiliation{Center for Computational Astrophysics, Flatiron Institute, 162 Fifth Avenue, New York, NY 10010, USA}
+\affiliation{Max-Planck-Institut f\"ur Astronomie, K\"onigstuhl 17, D-69117 Heidelberg, Germany}
+\affiliation{Center for Cosmology and Particle Physics, Department of Physics, New York University, 726 Broadway, New York, NY 10003, USA}
+
+\begin{abstract}
+  We present \thetractor, a software package for performing forward or
+  \emph{generative} modeling in astronomical images.  Given a set of
+  astronomical sources and a model of the properties of an
+  astronomical image, \thetractor\ generates a ``model image'': a
+  prediction of what would be observed in the image.  In the common
+  case where a noise model for the image is available (for example,
+  typical ground-based background-limited optical images), it is
+  simple to write down a likelihood function for the observed image
+  given the source and image model parameters, and \thetractor\ can
+  optimize or sample from this likelihood.  This allows us to frame
+  the measurement of astronomical sources (in multiple images, perhaps
+  taken by multiple instruments) as an optimization problem, as
+  opposed to the traditional approach of using \emph{estimators}.
+  \thetractor\ software allows parameters to be held fixed during the
+  fitting, enabling a variety of different fitting procedures,
+  including \emph{forced photometry}, where the source profiles are
+  held fixed and only the brightness in a new image is measured.
+\end{abstract}
+
+%% Keywords should appear after the \end{abstract} command. 
+%% The AAS Journals now uses Unified Astronomy Thesaurus concepts:
+%% https://astrothesaurus.org
+%% You will be asked to selected these concepts during the submission process
+%% but this old "keyword" functionality is maintained in case authors want
+%% to include these concepts in their preprints.
+\keywords{Classical Novae (251) --- Ultraviolet astronomy(1736)}
+
+\section{Introduction} \label{sec:intro}
+
+- generative models
+
+\cite{2009AJ....137.4400L}
+
+\section{Software structure}
+
+\section{Implementation details}
+
+- FFT galaxy convolution
+
+- Sersic models
+
+- Optimizers
+
+\section{Example results}
+
+\subsection{Refitting SDSS???}
+
+\subsection{Legacy Surveys}
+
+\subsection{legacyhalos / WISE / GALEX forced photometry}
+
+\subsection{Sampling from joint distribution of blended galaxy shapes???}
+
+
+\section{Discussion}
+
+- what is and isn't in The Tractor (source detection; model selection; PSF models; flats, darks, weights, masking)
+
+- extensions (Poisson noise model?)
+
+- will it replace Source Extractor and why that is not our goal (aka why we hate success)
+
+
+%\begin{acknowledgments}
+%\end{acknowledgments}
+
+\software{%Source Extractor \citep{1996A&AS..117..393B}
+          }
+
+%\appendix
+%\section{Appendix information}
+
+\bibliography{tractor}{}
+\bibliographystyle{aasjournal}
+
+\end{document}
