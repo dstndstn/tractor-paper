@@ -47,36 +47,98 @@
 
 \section{Introduction} \label{sec:intro}
 
-- generative models
+- catalog matching is bad
+
+- coadds are bad
+
+- generative models -- extract all information
+
+- masking no problem
+
+- working in image space
 
 \cite{2009AJ....137.4400L}
 
-\section{Software structure}
+\section{Methods}
 
-\section{Implementation details}
+%\subsection{Components}
+
+The two main elements of \thetractor\ are an \emph{image} and a
+\emph{source}.  An image includes the pixel data, the noise model, and
+calibration information such as the point-spread model, background
+model, and photometric and astrometric calibrations.  A source
+includes a position and brightness, and additional parameters
+depending on the type of source.  For example, a star might include
+motion or variability, while a galaxy model would include a spatial
+profile.
+
+%\subsection{Rendering}
+
+The core functionality of \thetractor\ is \emph{rendering} a
+pixel-by-pixel predicted or \emph{model} image patch for a source in
+an image.  This requires transforming from the source parameters into
+image units (pixels and counts); these transformations are performed
+by \emph{calibration} objects that describe the properties of an
+image.
+
+For example, we must convert the position of a source into a pixel
+location in the model image.  If the source position is represented as
+(RA,Dec) coordinates, then the corresponding image calibration object
+is a World Coordinate System object that converts celestial
+coordinates into pixel coordinates.  Similarly, the brightness of a
+source can be represented in magnitudes or linear flux units, and then
+the image's photometric calibration object applies a zeropoint to
+arrive at the count units of the image.  Other calibration objects
+include the point-spread function model and the sky background model.
+
+\thetractor\ is largely agnostic about exactly which parameters and
+calibrations are used for the position and brightness parameters; as
+long as the source and image calibrations are consistent, different
+parameterizations can be chosen to suit the problem.
+
+
+Rendering a source into an image then involves the steps of computing
+the center of the source in pixel coordinates, finding the PSF for
+that location in the image (perhaps depending on properties of the
+source, for example if a spectrally-varying PSF model is available),
+and the total number of counts contributed by the source.  The source
+object is responsible for rendering a unit-flux
+
+
+
+
+\subsection{Implementation details}
+
+- Gaussian mixture models; Sersic models
 
 - FFT galaxy convolution
-
-- Sersic models
 
 - Optimizers
 
 \section{Example results}
 
-\subsection{Refitting SDSS???}
+% \subsection{Refitting SDSS???} no not compelling
+
 
 \subsection{Legacy Surveys}
 
 \subsection{legacyhalos / WISE / GALEX forced photometry}
 
+- time-resolved WISE forced phot
+
 \subsection{Sampling from joint distribution of blended galaxy shapes???}
+
+\subsection{Image subtraction / transient detection / fitting moving objects}
+
+\subsection{Can we measure proper motions below the Gaia limit?}
+
 
 
 \section{Discussion}
 
-- what is and isn't in The Tractor (source detection; model selection; PSF models; flats, darks, weights, masking)
+- what is and isn't in The Tractor (source detection; model selection; PSF models; flats, darks, weights, masking; blobs)
 
-- extensions (Poisson noise model?)
+- extensions (Poisson noise model?  Tiered coadds?)
 
 - will it replace Source Extractor and why that is not our goal (aka why we hate success)
 
