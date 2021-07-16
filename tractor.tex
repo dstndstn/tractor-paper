@@ -4,13 +4,14 @@
 \shortauthors{Lang and Hogg}
 
 \newcommand{\thetractor}{\emph{The Tractor}}
+\newcommand{\sersic}{S\'ersic}
 
 \begin{document}
 
-\title{\emph{The Tractor}: forward modeling of astronomical images}
+\title{\emph{The Tractor}: measuring astronomical sources by forward-modeling images}
 
 \author[0000-0002-1172-0754]{Dustin A. Lang}
-\affiliation{Perimeter Institute for Theoretical Physics, 31 Caroline Street N, Waterloo, ON N25 2YL, Canada}
+\affiliation{Perimeter Institute for Theoretical Physics, 31 Caroline Street N, Waterloo, ON N2L 2Y5, Canada}
 
 \author[0000-0003-2866-9403]{David W. Hogg}
 \affiliation{Center for Computational Astrophysics, Flatiron Institute, 162 Fifth Avenue, New York, NY 10010, USA}
@@ -22,15 +23,19 @@
   \emph{generative} modeling in astronomical images.  Given a set of
   astronomical sources and a model of the properties of an
   astronomical image, \thetractor\ generates a ``model image'': a
-  prediction of what would be observed in the image.  In the common
-  case where a noise model for the image is available (for example,
-  typical ground-based background-limited optical images), it is
-  simple to write down a likelihood function for the observed image
-  given the source and image model parameters, and \thetractor\ can
-  optimize or sample from this likelihood.  This allows us to frame
-  the measurement of astronomical sources (in multiple images, perhaps
-  taken by multiple instruments) as an optimization problem, as
-  opposed to the traditional approach of using \emph{estimators}.
+  prediction of what would be observed in the image. 
+  The parameters of the sources can then be modified to best match
+  the observed data (in a chi-squared sense).
+  This trivially extends to multiple images (perhaps taken by different instruments or through different filters).
+  %In the common
+  %case where a noise model for the image is available (for example,
+  %typical ground-based background-limited optical images), it is
+  %simple to write down a likelihood function for the observed image
+  %given the source and image model parameters, and \thetractor\ can
+  %optimize or sample from this likelihood.  This allows us to frame
+  %the measurement of astronomical sources (in multiple images, %perhaps
+  %taken by multiple instruments) as an optimization problem, as
+  %opposed to the traditional approach of using \emph{estimators}.
   \thetractor\ software allows parameters to be held fixed during the
   fitting, enabling a variety of different fitting procedures,
   including \emph{forced photometry}, where the source profiles are
@@ -47,15 +52,21 @@
 
 \section{Introduction} \label{sec:intro}
 
+- many-epoch, multi-instrument, multi-wavelength imaging data is becoming prevalent, and hold great scientific value
+
+- current pipelines do not make best use of these data sets
+
 - catalog matching is bad
 
 - coadds are bad
 
-- generative models -- extract all information
+- processing a band at a time and merging is bad
 
-- masking no problem
+- generative models allow us to place catalog production in a likelihood space
 
-- working in image space
+- modeling individual images (with their individual PSF and noise models) allows us to extract all available information
+
+- masking: no problem.  (satellite trails will be more problematic in the near future!)  edges: no problem.
 
 \cite{2009AJ....137.4400L}
 
@@ -72,23 +83,27 @@ depending on the type of source.  For example, a star might include
 motion or variability, while a galaxy model would include a spatial
 profile.
 
+
+We assume the image has gone through low-level calibrations such
+as flat-fielding and that artifacts such as bad detector pixels, saturated pixels, and cosmic rays have been flagged.  The flagged pixels will be ignored when comparing the predicted and observed data.
+
+
 %\subsection{Rendering}
 
-The core functionality of \thetractor\ is \emph{rendering} a
-pixel-by-pixel predicted or \emph{model} image patch for a source in
-an image.  This requires transforming from the source parameters into
-image units (pixels and counts); these transformations are performed
-by \emph{calibration} objects that describe the properties of an
-image.
+One core function of \thetractor\ is \emph{rendering} a
+pixel-by-pixel prediction or \emph{model image} patch for the appearance of a source in
+an image.  That is, we are answering ``in the absence of noise, what would this source look like in an image with these calibration properties (bandpass, sensitivity, pointing)?''
 
+Rendering a model image requires transforming the parameters of the source (for exmaple, position in celestial coordinates and brightness in flux units) into
+image units (pixels and counts); these transformations are performed
+by \emph{calibration} objects that describe the properties of an image.
 For example, we must convert the position of a source into a pixel
 location in the model image.  If the source position is represented as
 (RA,Dec) coordinates, then the corresponding image calibration object
 is a World Coordinate System object that converts celestial
 coordinates into pixel coordinates.  Similarly, the brightness of a
-source can be represented in magnitudes or linear flux units, and then
-the image's photometric calibration object applies a zeropoint to
-arrive at the count units of the image.  Other calibration objects
+source can be represented in magnitudes or linear flux units, and the image's photometric calibration object applies a zeropoint to
+arrive at the units of the image.  Other calibration objects
 include the point-spread function model and the sky background model.
 
 \thetractor\ is largely agnostic about exactly which parameters and
@@ -101,8 +116,28 @@ Rendering a source into an image then involves the steps of computing
 the center of the source in pixel coordinates, finding the PSF for
 that location in the image (perhaps depending on properties of the
 source, for example if a spectrally-varying PSF model is available),
-and the total number of counts contributed by the source.  The source
-object is responsible for rendering a unit-flux
+and the total flux contributed by the source.  The source
+object is responsible for rendering its unit-flux representation in the image.  For point sources, given a pixelized PSF model, this is a trivial sub-pixel shift of the PSF model.  For galaxy sources, we use the mixture-of-Gaussian representations of the deVaucouleurs and exponential profiles presented in \cite{gaussiangalaxies}, or a general \sersic\ profile.
+The galaxy's elliptical profile must first be converted from celestial coordinates to pixel coordinates using the World Coordinate System transformation, then the Gaussian components must be correlated with the PSF.  For pixelized PSF models, we use the hybrid Fourier/real method described in \cite{galaxyfourier}.
+
+
+In addition to rendering model images, \thetractor\ can optimize
+model parameters so that the predicted image best matches the observed image, according to the noise model.
+
+Currently, we have only implemented a pixelwise independent Gaussian noise model.  That is, each observed pixel value is assumed to be the model image value plus independent Gaussian noise with variance given by a variance map.  (That is, each pixel can have different variance.)  In practice, we use \emph{inverse}-variance maps, so that we can completely ignore a pixel by setting its inverse-variance to zero.  This noise model is appropriate for typical optical CCD images in which the sky background contributes enough signal that the Poisson distribution is well approximated by a Gaussian.  CCD readout noise typically adds a small additional Gaussian noise.  This noise model is also commonly known as a chi-squared model.
+%, since the Gaussian likelihood is the logarithm %of $-1/2$ times the chi-squared.
+
+Notably, this model does not include an error term for the Poisson distribution of the source flux itself; this is discussed later, as are other noise models.
+
+\thetractor\ allows different optimization engines to be used.  Currently, we have implemented dense and sparse versions of a linearized least-squares methods, and one built on the \emph{Ceres Solver} nonlinear least-squares solver \citep{ceres}.
+
+The linearized least-squares methods begin by finding the derivatives of the model images with respect to each parameter being fit.  Changes in the model images correspond trivially to changes in the chi-squared value.  The linearized least-square optimizers use regular or sparse least-squares routines from \emph{numpy} and \emph{scipy.sparse}, respectively, to find an update direction (changes to parameters) that would minimize chi-squared if the problem were linear.  Since the problem is typically not linear (linear fluxes are linear parameters; celestial positions and galaxy shapes are not), we do \emph{line search} along the update direction: we first step the parameters by a small fraction of the proposed update, and take increasingly large steps (up to the full proposed update) as long as the chi-squared value keeps decreasing.  We then recompute derivatives at the new parameter settings and repeat the process until the resulting change in chi-squared is below a convergence threshold.  We have implemented a limited version of parameter constraints: when a proposed parameter update would take a parameter beyond its bound, we limit the step size to the bound.
+
+The third optimizer uses \emph{Ceres Solver}, a general nonlinear optimization package which implements a wide variety of algorithms.
+
+\thetractor\ allows both source and image parameters to be fit.  In principle, image calibration parameters such as the sky background model, the PSF model, or astrometric model could be optimized simultaneously with the sources.  In practice, we have rarely made use of this capability, instead preferring to take a standard approach of producing calibration products in pre-processing, and holding them fixed while measuring sources.
+
+
 
 
 
@@ -138,7 +173,9 @@ object is responsible for rendering a unit-flux
 
 - what is and isn't in The Tractor (source detection; model selection; PSF models; flats, darks, weights, masking; blobs)
 
-- extensions (Poisson noise model?  Tiered coadds?)
+- extensions (Poisson noise model; half-assedly including Poisson noise from sources based on image values, or (more correctly) based on the image model itself.
+
+- tiered coadds
 
 - will it replace Source Extractor and why that is not our goal (aka why we hate success)
 
